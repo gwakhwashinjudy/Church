@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧩 우리들의 100 대화판 (ㄹ자 에디션)</title>
+    <title>💛 우리들의 100 대화 사다리판</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { level1: '#FF8A8A', level2: '#4ADE80', level3: '#A78BFA' }
+                    colors: {
+                        kakaoYellow: '#FEE500',
+                        kakaoBrown: '#3C1E1E',
+                        level1: '#FF6B6B',
+                        level2: '#2ECC71',
+                        level3: '#9B5DE5'
+                    }
                 }
             }
         }
@@ -17,93 +23,93 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <style>
-        body { font-family: 'Pretendard', sans-serif; background-color: #0b0c10; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.06); }
+        body { font-family: 'Pretendard', sans-serif; background-color: #191919; color: #fff; }
         .break-keep { word-break: keep-all; }
         
-        /* 100칸 보드판 스크롤 최적화 */
-        .board-wrapper { max-height: calc(100vh - 260px); overflow-y: auto; padding-right: 4px; }
-        .board-wrapper::-webkit-scrollbar { width: 4px; }
-        .board-wrapper::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-
-        /* 세련된 칩 스타일 대화칸 디자인 및 광채 효과 */
-        .talk-chip {
-            position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+        /* 카카오 사다리 스타일 둥글고 귀여운 버튼 */
+        .ladder-step {
+            background-color: #252525;
+            border: 2px solid #333;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .chip-l1 { border: 1px solid rgba(255, 138, 138, 0.15); color: #FF8A8A; }
-        .chip-l2 { border: 1px solid rgba(74, 222, 128, 0.15); color: #4ADE80; }
-        .chip-l3 { border: 1px solid rgba(167, 139, 250, 0.15); color: #A78BFA; }
+        .ladder-step:active { transform: scale(0.92); }
+        
+        /* 레벨별 번호 하단 작은 포인트 바 */
+        .indicator-l1 { background-color: #FF6B6B; }
+        .indicator-l2 { background-color: #2ECC71; }
+        .indicator-l3 { background-color: #9B5DE5; }
 
-        /* 선택된 활성화 상태의 네온 디자인 */
-        .talk-chip.active-l1 { background: rgba(255, 138, 138, 0.15); border-color: #FF8A8A; box-shadow: 0 0 15px rgba(255, 138, 138, 0.4); transform: scale(1.05); color: #fff; }
-        .talk-chip.active-l2 { background: rgba(74, 222, 128, 0.15); border-color: #4ADE80; box-shadow: 0 0 15px rgba(74, 222, 128, 0.4); transform: scale(1.05); color: #fff; }
-        .talk-chip.active-l3 { background: rgba(167, 139, 250, 0.15); border-color: #A78BFA; box-shadow: 0 0 15px rgba(167, 139, 250, 0.4); transform: scale(1.05); color: #fff; }
+        /* 이미 방문(클릭)한 칸 표시 */
+        .ladder-step.visited { background-color: #333; border-color: #444; opacity: 0.6; }
+
+        /* 전체화면 대형 모달 애니메이션 */
+        .modal-active { display: flex !important; animation: fadeIn 0.25s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
-<body class="text-white min-h-screen flex flex-col justify-between p-3 md:p-5 select-none">
+<body class="min-h-screen flex flex-col justify-between p-4 select-none max-w-2xl mx-auto">
 
-    <!-- 상단 헤더 -->
-    <header class="w-full max-w-5xl mx-auto flex justify-between items-center mb-3">
-        <div>
-            <h1 class="text-lg md:text-xl font-black bg-gradient-to-r from-teal-300 to-emerald-400 bg-clip-text text-transparent">
-                🌿 우리들의 100 대화판 <span class="text-xs bg-white/10 text-white px-2 py-0.5 rounded-md ml-1 font-normal">터치 에디션</span>
-            </h1>
+    <!-- 헤더 영역 -->
+    <header class="w-full flex justify-between items-center py-2 mb-2 border-b border-white/10">
+        <div class="flex items-center gap-2">
+            <span class="text-xl">🎲</span>
+            <h1 class="text-lg font-black text-kakaoYellow">우리들의 100 대화 사다리</h1>
         </div>
-        <div class="text-xs text-gray-400 font-medium">원하는 번호 칸을 직접 누르세요</div>
+        <button onclick="resetVisited()" class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 hover:text-white transition-all">
+            판 초기화
+        </button>
     </header>
 
-    <!-- 메인 대시보드 구조 (보드판과 질문 보기 창 분할) -->
-    <main class="w-full max-w-5xl mx-auto flex-grow grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch mb-2">
-        
-        <!-- [좌측 & 중앙: 100칸 ㄹ자 보드판 공간] -->
-        <div class="md:col-span-2 glass rounded-[32px] p-4 bg-black/30 flex flex-col justify-between">
-            <div class="flex justify-between items-center text-[11px] font-bold text-gray-500 mb-3 px-1">
-                <span>🚩 1번 (좌상단)에서 시작</span>
-                <span class="text-gray-400"><i class="fa-solid fa-repeat mr-1"></i>ㄹ자 지그재그 방향 흐름</span>
-                <span>🏁 100번 (우하단) 종착</span>
-            </div>
-            
-            <!-- 100칸 격자가 생성되는 스크롤 가능 구역 -->
-            <div class="board-wrapper">
-                <div id="board-grid" class="grid grid-cols-5 sm:grid-cols-10 gap-2 w-full mx-auto">
-                    <!-- 자바스크립트가 10줄 10열의 ㄹ자 스네이크 맵을 자동 렌더링합니다 -->
-                </div>
-            </div>
+    <!-- 메인 보드판 (스크롤 가능 영역) -->
+    <main class="flex-grow overflow-y-auto pr-1 mb-4" style="max-height: calc(100vh - 120px);">
+        <!-- 카카오 스타일 상단 가이드 팁 -->
+        <div class="bg-[#252525] rounded-2xl p-3.5 mb-4 text-center border border-white/5">
+            <p class="text-xs text-gray-300 font-medium break-keep">
+                👉 원하는 번호 발판을 터치하면 <span class="text-kakaoYellow font-bold">대화 질문지</span>가 크게 열립니다. 지체들과 함께 번갈아가며 1번부터 100번까지 채워보세요!
+            </p>
         </div>
 
-        <!-- [우측: 선택된 질문 카드 상세 보기 판넬] -->
-        <div id="question-panel" class="glass rounded-[32px] p-6 flex flex-col justify-between border border-white/10 transition-all duration-300 min-h-[220px] md:h-auto bg-gradient-to-b from-white/[0.01] to-transparent">
-            <div id="panel-header" class="flex justify-between items-center border-b border-white/5 pb-2 opacity-40">
-                <span id="panel-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-white/10 text-gray-400 uppercase">선택 대기</span>
-                <span id="panel-q-num" class="text-xs font-bold font-mono tracking-wider text-gray-500">CHIP #00</span>
-            </div>
-
-            <div class="my-auto py-4 text-center">
-                <h3 id="panel-title" class="text-base md:text-xl font-black break-keep leading-snug text-gray-400">
-                    대화판에서 원하는 숫자 칸을 터치하면 질문이 오픈됩니다!
-                </h3>
-                <p id="panel-desc" class="text-xs md:text-sm text-gray-500 mt-3 break-keep leading-relaxed font-medium">
-                    지체들과 순서를 정해 번호를 골라가며 대화를 싹 틔워보세요.
-                </p>
-            </div>
-
-            <div class="flex justify-between items-center pt-2 border-t border-white/5 text-[10px] text-gray-500 font-medium">
-                <span>총 100개 가치관 질문 완비</span>
-                <span class="text-gray-400"><i class="fa-solid fa-hand-pointer opacity-60 mr-1"></i>직접 터치 모드</span>
-            </div>
+        <!-- 100칸 ㄹ자 지그재그 사다리 격자판 -->
+        <div id="board-grid" class="grid grid-cols-5 gap-2.5">
+            <!-- 자바스크립트가 정확한 순서의 100칸을 정교하게 렌더링합니다 -->
         </div>
-
     </main>
 
-    <!-- 하단 푸터 표기 -->
+    <!-- [전체화면 오버레이 대형 질문 모달 팝업] -->
+    <div id="question-modal" class="fixed inset-0 bg-[#191919] z-50 p-6 flex-col justify-between hidden">
+        <!-- 모달 상단 정보바 -->
+        <div class="flex justify-between items-center w-full max-w-xl mx-auto pt-4">
+            <span id="modal-badge" class="px-3 py-1 rounded-full text-xs font-black text-black">LEVEL</span>
+            <span id="modal-q-num" class="text-sm font-mono tracking-widest text-gray-500 font-bold">NUMBER #000</span>
+        </div>
+
+        <!-- 모달 중앙: 아주 큰 빔프로젝터급 글씨 크기 질문지 -->
+        <div class="w-full max-w-xl mx-auto my-auto text-center py-8">
+            <h2 id="modal-title" class="text-3xl md:text-4xl font-black leading-snug md:leading-normal text-white break-keep">
+                질문 제목이 여기에 크게 들어갑니다.
+            </h2>
+            <p id="modal-desc" class="text-lg md:text-xl text-gray-300 mt-8 break-keep leading-relaxed font-medium max-w-lg mx-auto">
+                질문에 대한 상세한 설명글이 여기에 연동됩니다.
+            </p>
+        </div>
+
+        <!-- 모달 하단: 복귀용 다음 버튼 -->
+        <div class="w-full max-w-md mx-auto pb-6">
+            <button onclick="closeModal()" class="w-full py-4 bg-kakaoYellow hover:bg-[#e5cf00] text-kakaoBrown text-base font-black rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                <span>대화 완료 (다음 칸으로)</span>
+                <i class="fa-solid fa-chevron-right text-xs"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 푸터 표시 -->
     <footer class="w-full text-center py-1 text-[10px] text-gray-600 font-medium">
-        © 2026 Church Group 100 Conversation Board Grid. All rights reserved.
+        © 2026 Church Group 100 Ladder Edition. All rights reserved.
     </footer>
 
-    <!-- 자바스크립트 데이터 및 ㄹ자 연산 제어 코드 -->
+    <!-- 자바스크립트 연산 및 데이터셋 바인딩 -->
     <script>
-        // 100개 완벽 매칭 질문 데이터 리스트 구성
+        // 100개의 완벽한 고유 질문 데이터 배열 구축
         const QUESTIONS_POOL = [];
         const l1Titles = ["내가 요즘 많이 듣는 말", "올해 꼭 가보고 싶은 곳", "요즘 나의 소확행", "나의 최근 TMI", "가장 좋아하는 카페 메뉴", "아침에 눈떠서 하는 첫 행동", "폰에서 가장 자주 쓰는 앱", "나만 아는 인생 맛집", "요즘 꽂힌 음악이나 찬양", "가방 속 필수 아이템", "일주일 휴가가 준다면?", "어릴 적 나의 장래희망", "최근 지출 중 최고 보람 템", "요즘 시작한 사소한 취미", "나를 잠 못 들게 하는 야식", "방안에서 가장 편안한 구역", "최근 삶의 질 상승 소품", "학창 시절 나의 별명", "내가 좋아하는 나의 성격", "최근 제일 크게 웃었던 일", "나만의 스트레스 푸는 법", "가장 좋아하는 원픽 계절", "주변 사람들이 말하는 첫인상", "마트에서 그냥 못 지나치는 코너", "오늘 모임 오기 직전 행동", "지금 당장 먹고 싶은 음식", "평소 즐겨 입는 스타일", "나의 주말 수면 패턴", "최근 본 추천 영상물", "노래방 최애 애창곡", "최근 마음에 드는 사진 한 장", "가장 실속 있는 베스트 선물", "로또 당첨 시 첫 소비처", "갑자기 생긴 1시간 때우기", "숨겨진 나만의 손재주"];
         const l1Descs = ["친구들이나 가족이 요즘 자주 건네는 인사말을 나눠주세요.", "마음속에 찍어둔 최고의 힐링 여행지가 있나요?", "지친 하루 끝에 나를 소소하게 위로하는 행동입니다.", "오늘 있었던 일 중 가장 사소한 정보를 알려주세요.", "모임 후 카페에 간다면 고를 단골 음료는?", "알람 끄기 외에 나만의 아침 고유 루틴은?", "가장 많은 시간을 뺏기는 스마트폰 앱은 무엇인가요?", "지체들과 나중에 꼭 함께 가보고 싶은 숨은 맛집!", "출퇴근길이나 평소 무한 반복 중인 플레이리스트.", "외출할 때 이것 없으면 가방이 허전하다 하는 것.", "방해 없이 온전한 7일이 생기면 하고 싶은 버킷리스트.", "초등학생 시절 일기장에 적어두었던 소중한 꿈.", "돈 아깝지 않은 최근 최고의 소비가 있다면?", "작게나마 새로 맛들이기 시작한 흥미 요소.", "야식 메뉴판에서 나를 가장 유혹하는 음식.", "내 방이나 거실 중 가장 안정감이 드는 스팟.", "사소하지만 생활 편의성을 2배 올려준 소품.", "학창 시절 친구들이 나를 부르던 별명과 비화.", "내가 나를 봐도 마음에 드는 성품이나 장점.", "이번 주에 배꼽 잡고 깔깔 웃었던 에피소드.", "답답함이 몰려올 때 마음을 비우는 나만의 루틴.", "봄, 여름, 가을, 겨울 중 가장 사랑하는 계절과 이유.", "사람들이 나를 처음 볼 때 가장 오해하는 첫인상.", "과자나 과일 등 마트에서 홀린 듯 발길이 머무는 곳.", "교회 오기 전까지 보냈던 나의 일상을 요약해 주세요.", "지금 상상만 해도 침이 고이는 먹고 싶은 요리.", "편안함 추구형, 포멀한 정장형 등 내 선호 스타일.", "꿀맛 같은 휴일에 잠을 청하는 나만의 방식.", "유튜브, 쇼츠, 드라마 등 재미있게 본 영상 템.", "마이크를 쥐면 나도 모르게 선곡하게 되는 18번.", "사진첩 속 가장 최근에 촬영한 마음에 드는 풍경/인물.", "기프티콘 등으로 받았을 때 활용도 최강이었던 선물.", "이성적 계산 말고 오직 즉흥적으로 나를 위해 지를 것.", "중간에 약속 시간이 붕 떴을 때 혼자 시간 보내는 곳.", "요리, 만들기, 정리 등 은근히 잘하는 내 능력."];
@@ -112,111 +118,135 @@
         const l3Titles = ["나에게 힘을 준 말씀/찬양", "교회 소그룹 속 진짜 행복", "닮고 싶은 성경 인물", "하나님이 나를 보시는 표정", "함께 나누고픈 중보기도 제목", "하나님을 처음 인격적으로 만난 날", "일상 속 하나님의 소소한 은혜", "옆 지체에게 배우고픈 장점", "10년 후 나의 신앙의 성숙도", "내 영적 건강 진단 점수", "고난의 순간을 이겨낸 은혜", "내 삶의 가장 큰 축복 조건", "나에게 예수님이란 단어의 의미", "크리스천으로 일터에서 힘든 점", "최근 나의 기도/예배 점수", "신앙생활 중 겪었던 큰 의문", "공동체 속 기쁨의 섬김 자리", "하나님이 내게 주신 달란트", "최근 베풀었던 작은 사랑 흔적", "교회 공동체가 주는 안식", "낙심할 때 나를 일으키는 원동력", "최근 깨달은 하나님의 사랑", "내가 꿈꾸는 믿음의 가정관", "내 삶의 우선순위 1등", "하나님 앞에 홀로 고백할 말", "하반기 영적 결단 한 가지", "구원의 확신이 찾아온 감격", "옆 지체를 향한 즉석 축복기도", "인생을 한 구절 성경 요약", "하나님의 세밀한 인도하심 사건", "멘토를 통해 도전받은 신앙", "교회 안에서 상처를 극복한 일", "내가 생각하는 제자의 삶"];
         const l3Descs = ["마음 판에 새겨진 말씀이 내 상황에 어떻게 위로를 주었나요?", "세상 모임과 다르게 우리 소그룹에서만 느끼는 안도감.", "성경 인물의 뚝심이나 순종 중 탐나는 매력.", "인자한 미소, 격려 등 주님이 나를 보시는 눈빛 상상.", "혼자 앓지 않고 지체들이 기도의 힘을 모으고픈 제목.", "모태신앙에서 깨어나거나 뜨겁게 거듭났던 인생의 터닝포인트.", "우연을 가장해 내 필요를 정확히 채우신 최근 은혜.", "서로를 향한 세심한 관찰을 담은 아낌없는 리스펙.", "10년 뒤 나는 공동체의 어떤 든든한 선배가 될까?", "전성기 대비 지금 내 영적 갈급함이나 평안함 수치.", "지나온 삶의 깊은 골짜기에서 주님이 동행해 주신 사연.", "건강, 동역자 등 주님이 거저 주신 위대한 자산.", "교리가 아닌 내 삶 속에서 예수님은 어떤 분이신가요?", "세상 속에서 소금과 빛으로 살아가며 겪는 분투기.", "나 스스로에게 채점해 보는 영적 루틴 상태.", "성경을 읽거나 신앙생활 중 생긴 솔직한 궁금증.", "보이지 않는 곳에서 소그룹원들을 섬기는 즐거운 상상.", "주님이 내게 주신 고유한 재능을 공동체에 녹여내는 법.", "커피 한 잔, 따뜻한 문자 등 사랑을 흘려보낸 기억.", "건물을 넘어 우리 소그룹이 주는 영적 고향의 온기.", "낙심에 빠졌을 때 나를 골방으로 이끄는 하나님의 장치.", "큐티나 설교를 통해 새롭게 다가온 주님의 성품.", "예수님 중심의 가정을 세워나가는 아름다운 청사진.", "성공, 신앙, 가정 등 내 에너지가 쏠리는 진짜 순위.", "먼 훗날 주님 품에 처음 안길 때 던질 첫마디.", "예배 시간 사수 등 주님 앞에 세울 은밀한 다짐.", "십자가 사랑이 내 마음에 진짜로 믿어지기 시작한 날.", "우측 지체의 기도제목을 듣고 전하는 진심 어린 축복.", "내 이정표가 되어주는 단 하나의 평생 말씀 구절.", "내 뜻과 달랐으나 완벽한 때에 길을 여셨던 증거.", "신앙 선배의 궤적을 보며 잠자던 믿음에 불이 붙은 일.", "인간적 서운함을 기도의 골방에서 은혜로 덮어낸 간증.", "날마다 자기를 부인하며 좁은 길을 묵묵히 걸어가는 태도."];
 
+        // 100개 데이터 주입 풀 구성
         for(let i=0; i<100; i++) {
             if(i<35) QUESTIONS_POOL.push({ id:i+1, level:1, icon:'🎈', title:l1Titles[i], desc:l1Descs[i] });
             else if(i<68) QUESTIONS_POOL.push({ id:i+1, level:2, icon:'🌱', title:l2Titles[i-35], desc:l2Descs[i-35] });
             else QUESTIONS_POOL.push({ id:i+1, level:3, icon:'✨', title:l3Titles[i-68], desc:l3Descs[i-68] });
         }
 
-        // 10행 10열 격자판 구조 연산 매핑 (ㄹ자 굽이치기)
-        const rows = 10;
-        const cols = 10; 
+        // ㄹ자 지그재그 수학 정밀 연산식 기반 판 설계 (20줄 5열 구성)
+        const totalRows = 20;
+        const totalCols = 5;
 
-        function drawSnakeBoard() {
-            const container = document.getElementById('board-grid');
-            container.innerHTML = '';
+        function renderKakaoLadderBoard() {
+            const gridContainer = document.getElementById('board-grid');
+            gridContainer.innerHTML = '';
 
-            let matrix = Array.from(Array(rows), () => Array(cols).fill(0));
-            let currentNum = 1;
+            // 1부터 100까지 순서 역전 현상을 막기 위한 2차원 매트릭스 행렬 선언
+            let mapMatrix = Array.from(Array(totalRows), () => Array(totalCols).fill(0));
+            let numSequence = 1;
 
-            // ㄹ자 뱀 모양 궤적 생성식
-            for (let r = 0; r < rows; r++) {
+            // 90 이후를 포함하여 100번 칸까지 한치의 오차도 없이 ㄹ자로 채워지도록 연산합니다.
+            for (let r = 0; r < totalRows; r++) {
                 if (r % 2 === 0) {
-                    for (let c = 0; c < cols; c++) matrix[r][c] = currentNum++;
+                    // 짝수 행: 좌 -> 우 순서 전진
+                    for (let c = 0; c < totalCols; c++) {
+                        mapMatrix[r][c] = numSequence++;
+                    }
                 } else {
-                    for (let c = cols - 1; c >= 0; c--) matrix[r][c] = currentNum++;
+                    // 홀수 행: 우 -> 좌 순서 전진 (ㄹ자 스네이크 턴)
+                    for (let c = totalCols - 1; c >= 0; c--) {
+                        mapMatrix[r][c] = numSequence++;
+                    }
                 }
             }
 
-            // HTML 타일 뿌리기
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const qId = matrix[r][c];
-                    const qData = QUESTIONS_POOL[qId - 1];
-                    const chip = document.createElement('div');
-                    chip.id = `chip-${qId}`;
-                    chip.setAttribute('onclick', `selectQuestion(${qId})`);
+            // 구워진 행렬 데이터 기반 엘리먼트 드로우
+            for (let r = 0; r < totalRows; r++) {
+                for (let c = 0; c < totalCols; c++) {
+                    const targetNumber = mapMatrix[r][c];
+                    const questionData = QUESTIONS_POOL[targetNumber - 1];
                     
-                    // 레벨별 테마 스타일 클래스 매칭
-                    let levelClass = '';
-                    if (qData.level === 1) levelClass = 'chip-l1';
-                    else if (qData.level === 2) levelClass = 'chip-l2';
-                    else levelClass = 'chip-l3';
+                    const stepBtn = document.createElement('div');
+                    stepBtn.id = `step-${targetNumber}`;
+                    stepBtn.setAttribute('onclick', `openQuestionModal(${targetNumber})`);
+                    
+                    // 레벨포인트 컬러 구분 바 클래스 도출
+                    let indicatorClass = 'indicator-l1';
+                    if (questionData.level === 2) indicatorClass = 'indicator-l2';
+                    else if (questionData.level === 3) indicatorClass = 'indicator-l3';
 
-                    chip.className = `talk-chip aspect-square rounded-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 text-center p-1 font-bold ${levelClass}`;
-                    chip.innerHTML = `
-                        <span class="text-[9px] opacity-40 font-mono leading-none">${qId}</span>
-                        <span class="text-base my-0.5">${qData.icon}</span>
+                    stepBtn.className = "ladder-step aspect-square rounded-2xl p-2 flex flex-col justify-between items-center cursor-pointer shadow-inner relative";
+                    stepBtn.innerHTML = `
+                        <span class="text-xs font-black text-gray-200">${targetNumber}</span>
+                        <span class="text-lg my-auto">${questionData.icon}</span>
+                        <div class="w-6 h-1 rounded-full ${indicatorClass} opacity-80"></div>
                     `;
-                    
-                    container.appendChild(chip);
+
+                    gridContainer.appendChild(stepBtn);
                 }
             }
         }
 
-        // 특정 번호 칸 클릭 시 질문 로드 액션
-        let lastSelectedId = null;
-        function selectQuestion(qId) {
-            // 이전에 선택되었던 칩 하이라이트 제거
-            if (lastSelectedId) {
-                const lastChip = document.getElementById(`chip-${lastSelectedId}`);
-                if (lastChip) {
-                    const lastData = QUESTIONS_POOL[lastSelectedId - 1];
-                    lastChip.className = lastChip.className.replace(/active-l\d/g, '').trim();
-                }
-            }
+        // 모달 팝업 크게 열기 함수
+        function openQuestionModal(number) {
+            const q = QUESTIONS_POOL[number - 1];
+            
+            const modal = document.getElementById('question-modal');
+            const badge = document.getElementById('modal-badge');
+            const qNum = document.getElementById('modal-q-num');
+            const title = document.getElementById('modal-title');
+            const desc = document.getElementById('modal-desc');
 
-            // 현재 선택한 칩 활성화 테마 입히기
-            const currentChip = document.getElementById(`chip-${qId}`);
-            const q = QUESTIONS_POOL[qId - 1];
-            if (currentChip) {
-                currentChip.classList.add(`active-l${q.level}`);
-            }
-            lastSelectedId = qId;
-
-            // 우측 상세 보기 패널 정보 업데이트
-            const panel = document.getElementById('question-panel');
-            const badge = document.getElementById('panel-badge');
-            const qNum = document.getElementById('panel-q-num');
-            const title = document.getElementById('panel-title');
-            const desc = document.getElementById('panel-desc');
-
-            qNum.textContent = `CHIP #_NUM ${String(q.id).padStart(3, '0')}`;
+            // 텍스트 매핑 주입
+            qNum.textContent = `NUMBER #${String(number).padStart(3, '0')}`;
             title.textContent = q.title;
             desc.textContent = q.desc;
-            title.className = "text-base md:text-2xl font-black text-white text-center break-keep leading-snug";
 
-            // 패널 배지 및 테마 경계선 색 변경 연출
+            // 레벨별 비주얼 강조 포인트 분기 연출
             if (q.level === 1) {
-                badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-black bg-level1/20 text-level1 uppercase";
-                badge.textContent = "LEVEL 1. 아이스브레이킹";
-                panel.style.borderColor = "rgba(255,138,138,0.4)";
+                badge.className = "px-3 py-1 rounded-full text-xs font-black bg-level1 text-white";
+                badge.textContent = "LEVEL 1. 아이스브레이킹 🎈";
             } else if (q.level === 2) {
-                badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-black bg-level2/20 text-level2 uppercase";
-                badge.textContent = "LEVEL 2. 소통과 가치";
-                panel.style.borderColor = "rgba(74,222,128,0.4)";
+                badge.className = "px-3 py-1 rounded-full text-xs font-black bg-level2 text-white";
+                badge.textContent = "LEVEL 2. 소통과 가치관 🌱";
             } else {
-                badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-black bg-level3/20 text-level3 uppercase";
-                badge.textContent = "LEVEL 3. 신앙과 은혜";
-                title.className = "text-base md:text-2xl font-black text-amber-200 text-center break-keep leading-snug";
-                panel.style.borderColor = "rgba(167,139,250,0.4)";
+                badge.className = "px-3 py-1 rounded-full text-xs font-black bg-level3 text-white";
+                badge.textContent = "LEVEL 3. 신앙과 은혜 ✨";
             }
-            
-            document.getElementById('panel-header').style.opacity = "1";
+
+            // 터치한 발판 다녀옴(Visited) 클래스 및 로컬스토리지 상태 영구 기록 활성화
+            const activeStep = document.getElementById(`step-${number}`);
+            if (activeStep) activeStep.classList.add('visited');
+            localStorage.setItem(`visited-step-${number}`, 'true');
+
+            // 화면에 크게 띄우기
+            modal.classList.add('modal-active');
         }
 
-        // 즉시 판 그리기 구동
-        window.addEventListener('DOMContentLoaded', drawSnakeBoard);
+        // 다음 버튼 누르면 사라지고 보드판 복귀
+        function closeModal() {
+            const modal = document.getElementById('question-modal');
+            modal.classList.remove('modal-active');
+        }
+
+        // 로컬스토리지 및 방문기록 전체 초기화 리셋
+        function resetVisited() {
+            if (confirm("방문했던 발판 기록을 모두 투명하게 초기화하시겠습니까?")) {
+                for (let i = 1; i <= 100; i++) {
+                    localStorage.removeItem(`visited-step-${i}`);
+                    const step = document.getElementById(`step-${i}`);
+                    if (step) step.classList.remove('visited');
+                }
+            }
+        }
+
+        // 로드 시 로컬스토리지에 저장되어 있던 누적 방문 내역 복원 로직
+        function loadVisitedState() {
+            for (let i = 1; i <= 100; i++) {
+                if (localStorage.getItem(`visited-step-${i}`) === 'true') {
+                    const step = document.getElementById(`step-${i}`);
+                    if (step) step.classList.add('visited');
+                }
+            }
+        }
+
+        // 초기 구동 바인딩
+        window.addEventListener('DOMContentLoaded', () => {
+            renderKakaoLadderBoard();
+            loadVisitedState();
+        });
     </script>
 </body>
 </html>
