@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎲 우리들의 대화 보드게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { level1: '#FF8A8A', level2: '#4ADE80', level3: '#A78BFA' }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background-color: #0b0c10; overflow: hidden; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .break-keep { word-break: keep-all; }
+        .scene { width: 60px; height: 60px; perspective: 300px; margin: 10px auto; }
+        .cube { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.1s linear; }
+        .cube__face { position: absolute; width: 60px; height: 60px; background: #fff; border: 2px solid #ccc; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #000; box-shadow: inset 0 0 10px rgba(0,0,0,0.2), 0 0 10px rgba(255,255,255,0.1); }
+        .cube__face--1 { transform: rotateY(0deg) translateZ(30px); color: #e11d48; font-size: 30px; }
+        .cube__face--6 { transform: rotateY(180deg) translateZ(30px); }
+        .cube__face--3 { transform: rotateY(90deg) translateZ(30px); }
+        .cube__face--4 { transform: rotateY(-90deg) translateZ(30px); }
+        .cube__face--2 { transform: rotateX(90deg) translateZ(30px); }
+        .cube__face--5 { transform: rotateX(-90deg) translateZ(30px); }
+        @keyframes rollingAnimation { 0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); } 100% { transform: rotateX(720deg) rotateY(1080deg) rotateZ(360deg); } }
+        .is-rolling { animation: rollingAnimation 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite; }
+        .show-1 { transform: rotateX(0deg) rotateY(0deg); }
+        .show-6 { transform: rotateX(0deg) rotateY(180deg); }
+        .show-3 { transform: rotateX(0deg) rotateY(-90deg); }
+        .show-4 { transform: rotateX(0deg) rotateY(90deg); }
+        .show-2 { transform: rotateX(-90deg) rotateY(0deg); }
+        .show-5 { transform: rotateX(90deg) rotateY(0deg); }
+        @keyframes miniJump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .piece-active { animation: miniJump 0.6s ease infinite; }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col justify-between p-3 md:p-5 select-none">
+
+    <header class="w-full max-w-5xl mx-auto flex justify-between items-center mb-2">
+        <div>
+            <h1 class="text-lg md:text-xl font-black bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent">
+                🎲 우리들의 대화 보드게임 <span class="text-xs bg-white/10 text-white px-2 py-0.5 rounded-md ml-1 font-normal">ㄹ자 에디션</span>
+            </h1>
+        </div>
+        <button onclick="resetGame()" class="px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-white/10 transition-all">
+            <i class="fa-solid fa-rotate-right mr-1"></i> 리셋
+        </button>
+    </header>
+
+    <main class="w-full max-w-5xl mx-auto flex-grow flex flex-col gap-3 justify-center">
+        <div class="w-full glass rounded-3xl p-3 md:p-4 bg-black/40">
+            <div class="text-center text-xs font-bold text-gray-400 mb-2 flex justify-between px-1">
+                <span>🚩 출발 (좌상단) ➔ ➔ ➔</span>
+                <span>현재 위치: <span id="current-spot-text" class="text-amber-400 font-black">START</span></span>
+                <span>🏁 도착 (우하단)</span>
+            </div>
+            <div id="board-grid" class="grid grid-cols-6 gap-1.5 md:gap-2 aspect-[6/5] max-h-[340px] md:max-h-[380px] w-full mx-auto"></div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 items-stretch h-[160px] md:h-[180px]">
+            <div class="glass rounded-3xl p-2 flex flex-col justify-between items-center text-center bg-gradient-to-b from-white/5 to-transparent relative">
+                <div class="text-[10px] md:text-xs text-gray-400 font-bold tracking-tight">주사위 컨트롤</div>
+                <div class="scene" id="dice-trigger" onclick="rollDice3D()">
+                    <div class="cube show-5" id="dice-cube">
+                        <div class="cube__face cube__face--1">●</div>
+                        <div class="cube__face cube__face--2">··</div>
+                        <div class="cube__face cube__face--3">···</div>
+                        <div class="cube__face cube__face--4 text-red-600">∷</div>
+                        <div class="cube__face cube__face--5">⁙</div>
+                        <div class="cube__face cube__face--6">⁛</div>
+                    </div>
+                </div>
+                <button id="btn-roll" onclick="rollDice3D()" class="w-full py-1.5 bg-gradient-to-r from-amber-400 to-orange-500 text-black font-black text-xs rounded-xl shadow-md active:scale-95 transition-all">
+                    터치해서 굴리기
+                </button>
+            </div>
+
+            <div id="question-panel" class="col-span-2 glass rounded-3xl p-4 flex flex-col justify-between border border-white/10 transition-colors duration-300">
+                <div id="panel-header" class="flex justify-between items-center border-b border-white/5 pb-1">
+                    <span id="panel-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-white/10 text-gray-400 uppercase">대기 중</span>
+                    <span id="panel-q-num" class="text-[10px] text-gray-500 font-bold font-mono">SPACE #00</span>
+                </div>
+                <div class="my-auto py-1">
+                    <h3 id="panel-title" class="text-sm md:text-lg font-black break-keep leading-snug text-gray-400 text-center">
+                        주사위를 굴리거나 말판을 눌러 대화를 나누세요!
+                    </h3>
+                    <p id="panel-desc" class="text-xs md:text-sm text-gray-500 mt-1 text-center break-keep leading-relaxed font-medium">
+                        총 100개의 소그룹 전용 질문이 랜덤하게 매칭됩니다.
+                    </p>
+                </div>
+                <div id="dice-result-guide" class="text-center text-[10px] text-gray-500 font-medium">
+                    대화 후 주사위를 다음 사람에게 넘겨주세요.
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="w-full text-center py-2 text-[10px] text-gray-600 font-medium">
+        © 2026 Church Group Board Game Project. 100 Questions Ready.
+    </footer>
+
+    <script>
+        const QUESTIONS_POOL = [];
+        const l1Titles = ["내가 요즘 많이 듣는 말", "올해 꼭 가보고 싶은 곳", "요즘 나의 소확행", "나의 최근 TMI", "가장 좋아하는 카페 메뉴", "아침에 눈떠서 하는 첫 행동", "폰에서 가장 자주 쓰는 앱", "나만 아는 인생 맛집", "요즘 꽂힌 음악이나 찬양", "가방 속 필수 아이템", "일주일 휴가가 준다면?", "어릴 적 나의 장래희망", "최근 지출 중 최고 보람 템", "요즘 시작한 사소한 취미", "나를 잠 못 들게 하는 야식", "방안에서 가장 편안한 구역", "최근 삶의 질 상승 소품", "학창 시절 나의 별명", "내가 좋아하는 나의 성격", "최근 제일 크게 웃었던 일", "나만의 스트레스 푸는 법", "가장 좋아하는 원픽 계절", "주변 사람들이 말하는 첫인상", "마트에서 그냥 못 지나치는 코너", "오늘 모임 오기 직전 행동", "지금 당장 먹고 싶은 음식", "평소 즐겨 입는 스타일", "나의 주말 수면 패턴", "최근 본 추천 영상물", "노래방 최애 애창곡", "최근 마음에 드는 사진 한 장", "가장 실속 있는 베스트 선물", "로또 당첨 시 첫 소비처", "갑자기 생긴 1시간 때우기", "숨겨진 나만의 손재주"];
+        const l1Descs = ["친구들이나 가족이 요즘 자주 건네는 인사말을 나눠주세요.", "마음속에 찍어둔 최고의 힐링 여행지가 있나요?", "지친 하루 끝에 나를 소소하게 위로하는 행동입니다.", "오늘 있었된 일 중 가장 사소한 정보를 알려주세요.", "모임 후 카페에 간다면 고를 단골 음료는?", "알람 끄기 외에 나만의 아침 고유 루틴은?", "가장 많은 시간을 뺏기는 스마트폰 앱은 무엇인가요?", "지체들과 나중에 꼭 함께 가보고 싶은 숨은 맛집!", "출퇴근길이나 평소 무한 반복 중인 플레이리스트.", "외출할 때 이것 없으면 가방이 허전하다 하는 것.", "방해 없이 온전한 7일이 생기면 하고 싶은 버킷리스트.", "초등학생 시절 일기장에 적어두었던 소중한 꿈.", "돈 아깝지 않은 최근 최고의 소비가 있다면?", "작게나마 새로 맛들이기 시작한 흥미 요소.", "야식 메뉴판에서 나를 가장 유혹하는 음식.", "내 방이나 거실 중 가장 안정감이 드는 스팟.", "사소하지만 생활 편의성을 2배 올려준 소품.", "학창 시절 친구들이 나를 부르던 별명과 비화.", "내가 나를 봐도 마음에 드는 성품이나 장점.", "이번 주에 배꼽 잡고 깔깔 웃었던 에피소드.", "답답함이 몰려올 때 마음을 비우는 나만의 루틴.", "봄, 여름, 가을, 겨울 중 가장 사랑하는 계절과 이유.", "사람들이 나를 처음 볼 때 가장 오해하는 첫인상.", "과자나 과일 등 마트에서 홀린 듯 발길이 머무는 곳.", "교회 오기 전까지 보냈던 나의 일상을 요약해 주세요.", "지금 상상만 해도 침이 고이는 먹고 싶은 요리.", "편안함 추구형, 포멀한 정장형 등 내 선호 스타일.", "꿀맛 같은 휴일에 잠을 청하는 나만의 방식.", "유튜브, 쇼츠, 드라마 등 재미있게 본 영상 템.", "마이크를 쥐면 나도 모르게 선곡하게 되는 18번.", "사진첩 속 가장 최근에 촬영한 마음에 드는 풍경/인물.", "기프티콘 등으로 받았을 때 활용도 최강이었던 선물.", "이성적 계산 말고 오직 즉흥적으로 나를 위해 지를 것.", "중간에 약속 시간이 붕 떴을 때 혼자 시간 보내는 곳.", "요리, 만들기, 정리 등 은근히 잘하는 내 능력."];
+        const l2Titles = ["올해 꼭 실천할 버킷리스트", "나를 한 단어로 비유한다면", "인간관계 최고의 가치", "인생 최고의 감동 선물", "타임머신 과거 vs 미래?", "요즘 나를 설레게 하는 일", "인생에서 가장 용기 낸 순간", "가장 고치고 싶은 사소한 습관", "슬럼프 극복 나만의 매뉴얼", "기억에 남는 고마운 조언", "내 성격의 장점과 보완할 점", "가족이란 단어가 주는 의미", "돈/명예 vs 시간/자유", "죽기 전 꼭 달성할 장기 꿈", "요즘 가장 에너지를 쏟는 곳", "혼자 시간 vs 사람들과 함께", "동경하는 멋진 사람의 모습", "힘든 날 힘이 되는 한마디", "다시 태어난다면 예술가/과학자/사업가", "최근 내 가치관에 변화를 준 일", "남들은 모르는 나의 콤플렉스", "학창 시절로 가면 더 열심히 할 것", "살면서 가장 고마운 은인", "친구 관계의 마음의 마지노선", "도피하고 싶은 나만의 이상향", "성공적인 인생의 정의", "10년 전 나와 지금의 나", "내가 예민하게 느끼는 감정", "삶의 가장 컸던 터닝포인트", "주변에 기억되고 싶은 나의 모습", "최근 내 마음의 날씨 비유", "가장 버리지 못하는 추억 물건", "가장 뿌듯했던 성취의 순간"];
+        const l2Descs = ["남은 올해가 가기 전 무조건 실천할 행동 선포하기.", "내 고유 성향을 가장 잘 설명하는 단어와 이유.", "친구를 사귀거나 동료와 일할 때 신뢰의 밑바탕.", "금액을 떠나 내 마음을 찡하게 만든 고마운 마음.", "과거와 미래 중 꼭 한 번 가보고 싶은 연도는?", "상상만 해도 하루에 활력이 도는 계획이나 소망.", "내 안전지대를 깨고 과감히 도전했던 선택.", "꼭 교정하고 싶은 소소한 행동 패턴이나 말버릇.", "번아웃이나 무기력이 올 때 내 마음을 청소하는 법.", "방황할 때 누군가 던져준 촌철살인 같은 조언.", "스스로 칭찬하는 예쁜 면과, 보완하고픈 단점.", "생각하면 마음이 뭉클하고 든든해지는 우리 가족.", "내 인생의 나침반이 더 강하게 끌리는 가치 방향.", "인생 장기 목표 중 이거 하나는 꼭 남기고 싶다 하는 것.", "직장, 커리어, 재테크 등 내 생각 지분 1위.", "에너지 충전 시 혼자가 편한지 수다가 편한지 조율.", "말을 예쁘게 하거나 뚝심 있는 어른의 훌륭한 모습.", "무너져 내릴 때 들으면 눈물 나게 고마운 위로.", "내 내재된 무한한 잠재력을 폭발시키고 싶은 분야.", "책, 미디어, 사건 등으로 편견이 깨졌던 순간.", "부끄럽지만 지체들이 품어주길 바라며 내비치는 연약함.", "과거의 나에게 갈 수 있다면 추천해 주고 싶은 분야.", "내 어두운 시절 빛이 되어준 고마운 사람의 이름.", "상대방이 이것만큼은 넘지 말았으면 하는 기준선.", "모든 의무를 내려놓고 한 달간 숨어 살 수 있는 곳.", "내가 지향하는 진정한 삶의 가치와 기준점.", "과거의 내가 현재의 나를 보면 자랑스러워할까요?", "타인의 슬픔이나 예술 등 내가 깊게 공감하는 지점.", "내 삶의 진로나 방향성이 완전히 새로워진 사건.", "먼 훗날 지인들이 나를 떠올릴 때 남을 수식어.", "맑음, 흐림, 태풍 직전 등 지금 내 내면 상태.", "바래진 편지나 소품 등 소중히 간직하는 사연.", "내 노력과 땀방울로 일궈냈던 감격의 기억."];
+        const l3Titles = ["나에게 힘을 준 말씀/찬양", "교회 소그룹 속 진짜 행복", "닮고 싶은 성경 인물", "하나님이 나를 보시는 표정", "함께 나누고픈 중보기도 제목", "하나님을 처음 인격적으로 만난 날", "일상 속 하나님의 소소한 은혜", "옆 지체에게 배우고픈 장점", "10년 후 나의 신앙의 성숙도", "내 영적 건강 진단 점수", "고난의 순간을 이겨낸 은혜", "내 삶의 가장 큰 축복 조건", "나에게 예수님이란 단어의 의미", "크리스천으로 일터에서 힘든 점", "최근 나의 기도/예배 점수", "신앙생활 중 겪었던 큰 의문", "공동체 속 기쁨의 섬김 자리", "하나님이 내게 주신 달란트", "최근 베풀었던 작은 사랑 흔적", "교회 공동체가 주는 안식", "낙심할 때 나를 일으키는 원동력", "최근 깨달은 하나님의 사랑", "내가 꿈꾸는 믿음의 가정관", "내 삶의 우선순위 1등", "하나님 앞에 홀로 고백할 말", "하반기 영적 결단 한 가지", "구원의 확신이 찾아온 감격", "옆 지체를 향한 즉석 축복기도", "인생을 한 구절 성경 요약", "하나님의 세밀한 인도하심 사건", "멘토를 통해 도전받은 신앙", "교회 안에서 상처를 극복한 일", "내가 생각하는 제자의 삶"];
+        const l3Descs = ["마음 판에 새겨진 말씀이 내 상황에 어떻게 위로를 주었나요?", "세상 모임과 다르게 우리 소그룹에서만 느끼는 안도감.", "성경 인물의 뚝심이나 순종 중 탐나는 매력.", "인자한 미소, 격려 등 주님이 나를 보시는 눈빛 상상.", "혼자 앓지 않고 지체들이 기도의 힘을 모으고픈 제목.", "모태신앙에서 깨어나거나 뜨겁게 거듭났던 인생의 터닝포인트.", "우연을 가장해 내 필요를 정확히 채우신 최근 은혜.", "서로를 향한 세심한 관찰을 담은 아낌없는 리스펙.", "10년 뒤 나는 공동체의 어떤 든든한 선배가 될까?", "전성기 대비 지금 내 영적 갈급함이나 평안함 수치.", "지나온 삶의 깊은 골짜기에서 주님이 동행해 주신 사연.", "건강, 동역자 등 주님이 거저 주신 위대한 자산.", "교리가 아닌 내 삶 속에서 예수님은 어떤 분이신가요?", "세상 속에서 소금과 빛으로 살아가며 겪는 분투기.", "나 스스로에게 채점해 보는 영적 루틴 상태.", "성경을 읽거나 신앙생활 중 생긴 솔직한 궁금증.", "보이지 않는 곳에서 소그룹원들을 섬기는 즐거운 상상.", "주님이 내게 주신 고유한 재능을 공동체에 녹여내는 법.", "커피 한 잔, 따뜻한 문자 등 사랑을 흘려보낸 기억.", "건물을 넘어 우리 소그룹이 주는 영적 고향의 온기.", "낙심에 빠졌을 때 나를 골방으로 이끄는 하나님의 장치.", "큐티나 설교를 통해 새롭게 다가온 주님의 성품.", "예수님 중심의 가정을 세워나가는 아름다운 청사진.", "성공, 신앙, 가정 등 내 에너지가 쏠리는 진짜 순위.", "먼 훗날 주님 품에 처음 안길 때 던질 첫마디.", "예배 시간 사수 등 주님 앞에 세울 은밀한 다짐.", "십자가 사랑이 내 마음에 진짜로 믿어지기 시작한 날.", "우측 지체의 기도제목을 듣고 전하는 진심 어린 축복.", "내 이정표가 되어주는 단 하나의 평생 말씀 구절.", "내 뜻과 달랐으나 완벽한 때에 길을 여셨던 증거.", "신앙 선배의 궤적을 보며 잠자던 믿음에 불이 붙은 일.", "인간적 서운함을 기도의 골방에서 은혜로 덮어낸 간증.", "날마다 자기를 부인하며 좁은 길을 묵묵히 걸어가는 태도."];
+
+        for(let i=0; i<100; i++) {
+            if(i<35) QUESTIONS_POOL.push({ id:i+1, level:1, icon:'🎈', title:l1Titles[i], desc:l1Descs[i] });
+            else if(i<68) QUESTIONS_POOL.push({ id:i+1, level:2, icon:'🌱', title:l2Titles[i-35], desc:l2Descs[i-35] });
+            else QUESTIONS_POOL.push({ id:i+1, level:3, icon:'✨', title:l3Titles[i-68], desc:l3Descs[i-68] });
+        }
+
+        const rows = 5; const cols = 6; const totalGameTiles = 30; let tokenPosition = 0;
+
+        function buildSnakeBoard() {
+            const gridContainer = document.getElementById('board-grid'); gridContainer.innerHTML = '';
+            let boardLayout = Array.from(Array(rows), () => Array(cols).fill(null)); let currentNum = 1;
+
+            for (let r = 0; r < rows; r++) {
+                if (r % 2 === 0) { for (let c = 0; c < cols; c++) { if (currentNum <= totalGameTiles) boardLayout[r][c] = currentNum++; } }
+                else { for (let c = cols - 1; c >= 0; c--) { if (currentNum <= totalGameTiles) boardLayout[r][c] = currentNum++; } }
+            }
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const tileNum = boardLayout[r][c]; const cell = document.createElement('div');
+                    if (tileNum === null) { cell.className = "opacity-0"; }
+                    else if (tileNum === 1) {
+                        cell.id = `tile-0`; cell.setAttribute('onclick', `clickTile(0)`);
+                        cell.className = "bg-amber-500 text-black font-black flex flex-col items-center justify-between p-1 rounded-xl cursor-pointer text-[11px] shadow-md border border-white";
+                        cell.innerHTML = `<span>START</span><div id="token-space-0" class="h-4 flex items-center"></div><span>1번 칸</span>`;
+                    } else if (tileNum === totalGameTiles) {
+                        cell.id = `tile-${totalGameTiles-1}`; cell.setAttribute('onclick', `clickTile(${totalGameTiles-1})`);
+                        cell.className = "bg-emerald-500 text-white font-black flex flex-col items-center justify-between p-1 rounded-xl cursor-pointer text-[11px] shadow-md border border-white/20";
+                        cell.innerHTML = `<span>GOAL</span><div id="token-space-${totalGameTiles-1}" class="h-4 flex items-center"></div><span>30번 칸</span>`;
+                    } else {
+                        let colorBorder = 'border-level1/30 text-level1';
+                        if (tileNum > 10 && tileNum <= 20) colorBorder = 'border-level2/30 text-level2';
+                        else if (tileNum > 20) colorBorder = 'border-level3/30 text-level3';
+                        cell.id = `tile-${tileNum - 1}`; cell.setAttribute('onclick', `clickTile(${tileNum - 1})`);
+                        cell.className = `glass border ${colorBorder} flex flex-col items-center justify-between p-1 rounded-xl cursor-pointer hover:bg-white/5 transition-all text-center text-[10px] font-bold`;
+                        cell.innerHTML = `<span class="opacity-40 font-mono">${tileNum}</span><div id="token-space-${tileNum - 1}" class="h-3 flex items-center"></div><span class="text-[9px] opacity-70">대화</span>`;
+                    }
+                    gridContainer.appendChild(cell);
+                }
+            }
+        }
+
+        let isRolling = false;
+        function rollDice3D() {
+            if (isRolling) return; isRolling = true;
+            const cube = document.getElementById('dice-cube'); const btn = document.getElementById('btn-roll');
+            btn.disabled = true; cube.className = "cube is-rolling";
+            document.getElementById('dice-result-guide').textContent = "주사위 굴리는 중...";
+
+            setTimeout(() => {
+                const diceValue = Math.floor(Math.random() * 6) + 1; cube.className = `cube show-${diceValue}`;
+                let targetPos = tokenPosition + diceValue;
+                if (targetPos >= totalGameTiles) { targetPos = totalGameTiles - 1; }
+                tokenPosition = targetPos; updateTokenUI(); openRandomQuestionFromSpot(tokenPosition, diceValue);
+                isRolling = false; btn.disabled = false;
+            }, 800);
+        }
+
+        function updateTokenUI() {
+            for (let i = 0; i < totalGameTiles; i++) {
+                const space = document.getElementById(`token-space-${i}`); if (space) space.innerHTML = '';
+                const tile = document.getElementById(`tile-${i}`); if (tile) tile.classList.remove('bg-white/10', 'border-white', 'scale-105');
+            }
+            const activeSpace = document.getElementById(`token-space-${tokenPosition}`);
+            if (activeSpace) { activeSpace.innerHTML = `<span class="piece-active inline-block w-3.5 h-3.5 rounded-full bg-gradient-to-t from-amber-400 to-yellow-200 border border-white text-[8px] flex items-center justify-center text-black font-black">🏃</span>`; }
+            const activeTile = document.getElementById(`tile-${tokenPosition}`);
+            if (activeTile) activeTile.classList.add('bg-white/10', 'border-white', 'scale-105');
+            const spotText = document.getElementById('current-spot-text');
+            if (tokenPosition === 0) spotText.textContent = "START";
+            else if (tokenPosition === totalGameTiles - 1) spotText.textContent = "GOAL 🏁";
+            else spotText.textContent = `${tokenPosition + 1}번 칸`;
+        }
+
+        function clickTile(spotId) { tokenPosition = spotId; updateTokenUI(); openRandomQuestionFromSpot(spotId, null); }
+
+        function openRandomQuestionFromSpot(spotId, diceValue) {
+            const panel = document.getElementById('question-panel'); const badge = document.getElementById('panel-badge');
+            const qNum = document.getElementById('panel-q-num'); const title = document.getElementById('panel-title');
+            const desc = document.getElementById('panel-desc'); const guide = document.getElementById('dice-result-guide');
+
+            if (diceValue) { guide.innerHTML = `주사위 <span class="text-amber-400 font-black text-xs">[ ${diceValue} ]</span> 등장! 다음 칸으로 전진했습니다.`; }
+            else { guide.textContent = "말판을 눌러 수동 선택했습니다."; }
+
+            if (spotId === 0) {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black bg-white/10 text-gray-400 uppercase"; badge.textContent = "대기";
+                qNum.textContent = "SPACE #01"; title.textContent = "출발 지점입니다! 주사위를 굴려주세요.";
+                title.className = "text-sm md:text-lg font-black text-gray-400 text-center break-keep";
+                desc.textContent = "ㄹ자 모양 보드판을 돌며 지체들과 이야기를 나눠보세요.";
+                panel.style.borderColor = "rgba(255,255,255,0.08)"; return;
+            }
+
+            if (spotId === totalGameTiles - 1) {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-black uppercase"; badge.textContent = "완주";
+                qNum.textContent = "SPACE #30"; title.textContent = "축하합니다! 대화 보드게임 골인 지점에 도달했습니다!";
+                title.className = "text-sm md:text-lg font-black text-emerald-400 text-center break-keep";
+                desc.textContent = "오늘 나눈 은혜를 가슴에 품고 다 함께 마무리 기도나 박수로 소그룹을 마무리해 보세요.";
+                panel.style.borderColor = "#10B981"; return;
+            }
+
+            const randIdx = Math.floor(Math.random() * QUESTIONS_POOL.length); const q = QUESTIONS_POOL[randIdx];
+            qNum.textContent = `RANDOM CARD #${String(q.id).padStart(2, '0')}`; title.textContent = q.title; desc.textContent = q.desc;
+            title.className = "text-sm md:text-lg font-black text-white text-center break-keep";
+
+            if (q.level === 1) {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black bg-level1/20 text-level1 uppercase"; badge.textContent = "LEVEL 1. 아이스브레이킹";
+                panel.style.borderColor = "rgba(255,138,138,0.3)";
+            } else if (q.level === 2) {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black bg-level2/20 text-level2 uppercase"; badge.textContent = "LEVEL 2. 소통과 가치";
+                panel.style.borderColor = "rgba(74,222,128,0.3)";
+            } else {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black bg-level3/20 text-level3 uppercase"; badge.textContent = "LEVEL 3. 신앙과 은혜";
+                title.className = "text-sm md:text-lg font-black text-amber-200 text-center break-keep"; panel.style.borderColor = "rgba(167,139,250,0.3)";
+            }
+        }
+
+        function resetGame() {
+            if (confirm("게임을 처음 상태로 리셋하시겠습니까?")) { tokenPosition = 0; updateTokenUI(); openRandomQuestionFromSpot(0, null); }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => { buildSnakeBoard(); updateTokenUI(); });
+    </script>
+</body>
+</html>
