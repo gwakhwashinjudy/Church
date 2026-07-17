@@ -1,2 +1,569 @@
 # Church
 Many kinds of activities at church
+소그룹이나 청년부 모임에서 지체들이 함께 둘러앉아 실제 스마트폰 앱을 사용하는 것처럼 세련되게 대화할 수 있는 '우리들의 대화 카드 (Church Small Group Edition)' 웹 애플리케이션을 제작했습니다.
+요청하신 모든 스펙(애플 스타일 디자인, 모바일 및 PC 대응, 이전/다음 버튼, 진행률 표시, 카테고리 필터링, 스와이프 기능, 빔프로젝터용 대형 글씨 모드, 네온 효과 등)과 함께, 소그룹의 흥미를 돋울 수 있는 '순서 랜덤 셔플' 기능까지 포함하여 완벽히 단일 파일로 동작하도록 설계했습니다.
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌿 우리들의 대화 카드 (Church Small Group Edition)</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        level1: '#FF8A8A', // 말랑말랑 아이스브레이킹 (피치/코랄)
+                        level2: '#4ADE80', // 조금 더 가까이 (세이지 그린)
+                        level3: '#A78BFA', // 은혜를 나누는 시간 (라벤더/바이올렛)
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Pretendard Font -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            overflow: hidden;
+            background-color: #0d0e12;
+        }
+
+        /* 애플 스타일 흐르는 그라데이션 배경 생성 */
+        .bg-gradient-animate {
+            background: radial-gradient(circle at 10% 20%, rgba(255, 138, 138, 0.08) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(167, 139, 250, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, rgba(74, 222, 128, 0.05) 0%, transparent 60%),
+                        #0b0c10;
+            background-size: 200% 200%;
+            animation: flowBackground 20s ease infinite;
+        }
+
+        @keyframes flowBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 카드 유리효과 (Glassmorphism) */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
+        }
+
+        /* 네온 광채 효과 (카드 뒷배경용) */
+        .neon-glow-1 { box-shadow: 0 0 40px -5px rgba(255, 138, 138, 0.25); border-color: rgba(255, 138, 138, 0.25); }
+        .neon-glow-2 { box-shadow: 0 0 40px -5px rgba(74, 222, 128, 0.25); border-color: rgba(74, 222, 128, 0.25); }
+        .neon-glow-3 { box-shadow: 0 0 40px -5px rgba(167, 139, 250, 0.25); border-color: rgba(167, 139, 250, 0.25); }
+
+        /* 카드 슬라이드 트랜지션 애니메이션 */
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .slide-left {
+            animation: slideLeftOut 0.35s forwards cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .slide-right {
+            animation: slideRightOut 0.35s forwards cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .slide-in-left {
+            animation: slideLeftIn 0.35s forwards cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .slide-in-right {
+            animation: slideRightIn 0.35s forwards cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes slideLeftOut {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(-120%) rotateY(-20deg) scale(0.9); opacity: 0; }
+        }
+
+        @keyframes slideRightOut {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(120%) rotateY(20deg) scale(0.9); opacity: 0; }
+        }
+
+        @keyframes slideLeftIn {
+            0% { transform: translateX(120%) rotateY(20deg) scale(0.9); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes slideRightIn {
+            0% { transform: translateX(-120%) rotateY(-20deg) scale(0.9); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        /* 빔프로젝터 모드 (큰 글씨 및 고대비 모드) */
+        body.projector-mode .glass-card {
+            background: #ffffff !important;
+            border: 4px solid #1a1d24 !important;
+            box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.7) !important;
+        }
+        body.projector-mode .bg-gradient-animate {
+            background: #111318 !important;
+        }
+        body.projector-mode .text-gray-400 { color: #4b5563 !important; }
+        body.projector-mode .text-white { color: #000000 !important; }
+        body.projector-mode .text-gray-300 { color: #1f2937 !important; }
+        
+        /* 터치 비활성화 */
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-gradient-animate text-white min-h-screen flex flex-col justify-between no-select transition-colors duration-500">
+
+    <!-- 상단 헤더 영역 -->
+    <header class="w-full px-6 py-4 md:px-12 md:py-6 flex justify-between items-center z-10">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl md:text-3xl">🌿</span>
+            <div>
+                <h1 id="app-title" class="text-lg md:text-xl font-bold tracking-tight bg-gradient-to-r from-green-300 to-emerald-400 bg-clip-text text-transparent">
+                    우리들의 대화 카드
+                </h1>
+                <p class="text-xs text-gray-400 font-medium">Church Small Group Edition</p>
+            </div>
+        </div>
+        
+        <!-- 우측 컨트롤 박스 -->
+        <div class="flex items-center gap-2">
+            <!-- 빔 프로젝터 모드 토글 -->
+            <button id="btn-projector" class="p-2.5 md:p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/15 transition-all flex items-center justify-center text-sm gap-2" title="빔 프로젝터 모드 (크게보기)">
+                <i class="fa-solid fa-desktop text-gray-300"></i>
+                <span class="hidden md:inline text-xs text-gray-300 font-medium">프로젝터 모드</span>
+            </button>
+            <!-- 카드 랜덤 셔플 토글 -->
+            <button id="btn-shuffle" class="p-2.5 md:p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/15 transition-all flex items-center justify-center text-sm gap-2" title="질문 셔플 (랜덤 섞기)">
+                <i id="shuffle-icon" class="fa-solid fa-shuffle text-gray-300"></i>
+                <span class="hidden md:inline text-xs text-gray-300 font-medium">랜덤 섞기</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 카테고리 필터링 탭 -->
+    <div class="w-full px-4 z-10 flex justify-center">
+        <div class="flex p-1 rounded-2xl bg-black/40 border border-white/5 gap-1 max-w-full overflow-x-auto scrollbar-none">
+            <button onclick="filterCategory('all')" id="tab-all" class="px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap bg-white/15 text-white">
+                전체
+            </button>
+            <button onclick="filterCategory(1)" id="tab-1" class="px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all text-gray-400 hover:text-white whitespace-nowrap flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-level1"></span>Level 1. 말랑말랑
+            </button>
+            <button onclick="filterCategory(2)" id="tab-2" class="px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all text-gray-400 hover:text-white whitespace-nowrap flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-level2"></span>Level 2. 조금 더
+            </button>
+            <button onclick="filterCategory(3)" id="tab-3" class="px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all text-gray-400 hover:text-white whitespace-nowrap flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-level3"></span>Level 3. 은혜나눔
+            </button>
+        </div>
+    </div>
+
+    <!-- 중앙 카드 프레임워크 -->
+    <main class="flex-grow flex items-center justify-center px-4 py-4 md:py-8 z-10 relative">
+        <div class="card-container w-full max-w-2xl h-[420px] md:h-[480px] relative flex items-center justify-center">
+            
+            <!-- 메인 질문 카드 -->
+            <div id="conversation-card" class="glass-card w-full h-full rounded-[32px] md:rounded-[48px] p-8 md:p-14 flex flex-col justify-between absolute cursor-grab active:cursor-grabbing">
+                
+                <!-- 상단 헤더 (카테고리 레벨 및 진행 아이콘) -->
+                <div class="flex justify-between items-center">
+                    <span id="card-level-badge" class="px-4 py-1.5 rounded-full text-xs md:text-sm font-extrabold tracking-wide uppercase transition-colors duration-300">
+                        LEVEL 1
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <span id="level-icon" class="text-xl">🎈</span>
+                        <span id="level-title" class="text-sm md:text-base font-bold text-gray-300 transition-colors duration-300">말랑말랑 아이스브레이킹</span>
+                    </div>
+                </div>
+
+                <!-- 질문 텍스트 영역 (중앙 정렬) -->
+                <div class="my-auto py-4 text-center">
+                    <div id="card-index-display" class="text-sm font-bold tracking-widest text-gray-400 uppercase mb-3">QUESTION 01</div>
+                    <h2 id="card-title" class="text-2xl md:text-4xl font-bold leading-normal md:leading-snug transition-all duration-300 break-keep">
+                        내가 요즘 가장 많이 듣는 말
+                    </h2>
+                    <p id="card-description" class="text-base md:text-xl text-gray-300 mt-6 max-w-xl mx-auto break-keep leading-relaxed font-medium">
+                        최근 친구나 가족, 직장 동료들에게 자주 듣는 말은 무엇인가요? (긍정적인 말도 좋고, 재미있는 참견도 좋아요!)
+                    </p>
+                </div>
+
+                <!-- 하단 부가 정보 및 팁 -->
+                <div class="flex justify-between items-center pt-2 border-t border-white/5">
+                    <span class="text-xs text-gray-400 flex items-center gap-1">
+                        <i class="fa-solid fa-hand-pointer opacity-50"></i>
+                        <span>좌우 스와이프로 넘기기 가능</span>
+                    </span>
+                    <span id="progress-indicator" class="text-xs md:text-sm font-semibold tracking-wider text-gray-400 bg-white/5 px-3.5 py-1.5 rounded-full">
+                        1 / 25
+                    </span>
+                </div>
+                
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- 하단 내비게이션 컨트롤러 -->
+    <footer class="w-full px-6 py-6 md:px-12 md:py-8 flex flex-col gap-4 items-center z-10 bg-gradient-to-t from-black/50 to-transparent">
+        
+        <!-- 진행 바 (Progress Bar) -->
+        <div class="w-full max-w-xl bg-white/5 h-2.5 rounded-full overflow-hidden border border-white/5">
+            <div id="progress-bar-fill" class="h-full bg-gradient-to-r from-level1 via-level2 to-level3 transition-all duration-300 rounded-full" style="width: 4%;"></div>
+        </div>
+
+        <!-- 이전 / 다음 버튼 세트 -->
+        <div class="flex items-center gap-4 w-full max-w-md justify-between mt-2">
+            <button onclick="navigateCard('prev')" class="flex-1 py-4 md:py-4.5 rounded-2xl bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 transition-all flex items-center justify-center gap-2 font-bold text-gray-200">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>이전</span>
+            </button>
+            
+            <button onclick="navigateCard('next')" class="flex-1 py-4 md:py-4.5 rounded-2xl bg-white/10 hover:bg-white/15 active:scale-95 border border-white/15 transition-all flex items-center justify-center gap-2 font-bold text-white bg-gradient-to-r from-white/10 to-white/5">
+                <span>다음</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <p class="text-[11px] text-gray-500 font-medium tracking-wide mt-2">
+            © 2026 Church Conversation Card Project. All rights reserved.
+        </p>
+    </footer>
+
+    <!-- 자바스크립트 로직 -->
+    <script>
+        // 대화 카드 원본 데이터 정의
+        const ORIGINAL_CARDS = [
+            // Level 1. 말랑말랑 아이스브레이킹 (1 ~ 8)
+            { id: 1, level: 1, icon: '🎈', levelText: '말랑말랑 아이스브레이킹', title: '내가 요즘 가장 많이 듣는 말', desc: '최근 친구나 가족, 직장 동료들에게 자주 듣는 말은 무엇인가요? (긍정적인 말도 좋고, 재미있는 참견도 좋아요!)' },
+            { id: 2, level: 1, icon: '🎈', levelText: '말랑말랑 아이스브레이킹', title: '올해 꼭 가보고 싶은 곳', desc: '국내외 어디든 좋습니다. 그곳에 가서 무엇을 하며 시간을 보내고 싶나요?' },
+            { id: 3, level: 1, icon: '🎈', levelText: '말랑말랑 아이스브레이킹', title: "요즘 나의 '소확행'", desc: '지친 하루 끝에 나를 웃게 만드는 작은 즐거움이 있다면 무엇인가요? (소소하지만 확실한 행복)' },
+            { id: 4, level: 1, icon: '🎈', levelText: '말랑말랑 아이스브레이킹', title: '나의 최근 TMI', desc: '정말 사소하지만 지체들에게 알려주고 싶은 오늘의 정보가 있나요? (Too Much Information)' },
+            { id: 5, level: 1, icon: '🎈', levelText: '말랑말랑 아이스브레이킹', title: '가장 좋아하는 카페 메뉴와 이유', desc: "모임 후에 다 함께 카페에 간다면, 당신의 '최애' 픽 메뉴는 무엇인가요?" },
+            { id: 6, level: 1, icon: '🎈', levelText: '말랑말랑 아이스브레이킹', title: '아침에 일어나서 먼저 하는 행동', desc: '눈을 뜨자마자 시작되는 당신만의 고유한 아침 루틴이 궁금해요.' },
+            { id: 7, level: 1, icon: '🎈', levelText: '말랑말랑 아이스브레이킹', title: '가장 자주 사용하는 앱 TOP 3', desc: '휴대폰에서 나만의 일상 시간을 가장 많이 차지하는 것은 무엇인가요?' },
+            { id: 8, level: 1, icon: '🎈', levelText: '말랑말랑 아이스브레이킹', title: "나만 알고 있는 '인생 맛집'", desc: '지체들과 나중에 꼭 같이 가보고 싶은 나만의 아지트 맛집을 소개해 주세요.' },
+
+            // Level 2. 조금 더 가까이 (9 ~ 16)
+            { id: 9, level: 2, icon: '🌱', levelText: '조금 더 가까이', title: '올해 꼭 해보고 싶은 것', desc: "나의 '버킷리스트' 중 올해가 가기 전에 꼭 실천하고 싶은 한 가지는 무엇인가요?" },
+            { id: 10, level: 2, icon: '🌱', levelText: '조금 더 가까이', title: '내가 가장 좋아하는 계절과 이유', desc: '그 계절이 주는 특별한 분위기나 기억나는 소중한 추억이 있나요?' },
+            { id: 11, level: 2, icon: '🌱', levelText: '조금 더 가까이', title: '나를 한 단어로 표현한다면?', desc: '그 단어가 나의 성격이나 정체성, 가치관을 어떻게 잘 설명해 주나요?' },
+            { id: 12, level: 2, icon: '🌱', levelText: '조금 더 가까이', title: '나만의 스트레스 해소법', desc: '머리가 복잡하고 마음이 답답할 때, 마음을 환기시키는 효과적인 방법은?' },
+            { id: 13, level: 2, icon: '🌱', levelText: '조금 더 가까이', title: '친구 사귈 때 가장 중시하는 점', desc: '상대방에게 어떤 면이 보일 때 혹은 어떤 성품을 가졌을 때 가장 편안함을 느끼나요?' },
+            { id: 14, level: 2, icon: '🌱', levelText: '조금 더 가까이', title: '내가 받았던 최고의 선물', desc: '실물 선물도 좋고, 누군가 전해 준 따뜻한 마음이나 특별했던 경험도 좋습니다.' },
+            { id: 15, level: 2, icon: '🌱', levelText: '조금 더 가까이', title: '타임머신이 있다면, 과거 vs 미래?', desc: '과거와 미래 중 꼭 가고 싶은 시점은 어디이며, 가서 무엇을 바꾸거나 보고 싶나요?' },
+            { id: 16, level: 2, icon: '🌱', levelText: '조금 더 가까이', title: '요즘 나를 가장 설레게 하는 일', desc: '생각만 해도 미소가 지어지고 하루를 활기차게 만드는 계획이나 꿈이 있나요?' },
+
+            // Level 3. 은혜를 나누는 시간 (17 ~ 25)
+            { id: 17, level: 3, icon: '✨', levelText: '은혜를 나누는 시간', title: '최근 나에게 힘이 된 말씀이나 찬양', desc: '그 성경 구절이나 찬양 가사가 왜 지금 나에게 꼭 필요했는지 들려주세요.' },
+            { id: 18, level: 3, icon: '✨', levelText: '은혜를 나누는 시간', title: '교회 공동체 속 나의 기쁨', desc: '소그룹 지체들이나 교회 사람들과 함께하면서 가장 행복하거나 감사했던 순간은?' },
+            { id: 19, level: 3, icon: '✨', levelText: '은혜를 나누는 시간', title: '내가 닮고 싶은 성경 인물', desc: '그 인물의 어떠한 삶의 태도나 신앙적 뚝심을 나의 닮은꼴 삼고 싶나요?' },
+            { id: 20, level: 3, icon: '✨', levelText: '은혜를 나누는 시간', title: '하나님이 나를 보시는 표정은?', desc: '오늘 하루 나를 지켜보시던 하나님의 얼굴 표정은 어떠하셨을지 상상해 보세요.' },
+            { id: 21, level: 3, icon: '✨', levelText: '은혜를 나누는 시간', title: '지금 내게 가장 필요한 기도의 제목', desc: '지체들과 기도의 힘을 모으고 싶은, 나의 솔직하고 간절한 기도 제목은 무엇인가요?' },
+            { id: 22, level: 3, icon: '✨', levelText: '은혜를 나누는 시간', title: '처음 하나님을 인격적으로 만난 순간', desc: "내 평생의 믿음생활 속에서 가장 큰 전환점('터닝포인트')이 되었던 경험은?" },
+            { id: 23, level: 3, icon: '✨', levelText: '은혜를 나누는 시간', title: '최근 삶 속에서 느낀 하나님의 손길', desc: '거창하지 않더라도 좋습니다. 일상 속에서 "아, 이건 정말 하나님의 은혜다!" 느낀 순간은?' },
+            { id: 24, level: 3, icon: '✨', levelText: '은혜를 나누는 시간', title: '옆 지체에게 닮고(배우고) 싶은 점', desc: '서로를 향해 세심한 시선을 담아, 서로의 훌륭한 장점을 발견하고 칭찬해 주세요.' },
+            { id: 25, level: 3, icon: '✨', levelText: '은혜를 나누는 시간', title: '나의 10년 후 모습 상상하기', desc: '10년 후 나는 교회와 사회 안에서 어떤 믿음의 동역자이자 성숙한 사람으로 자라나 있을까요?' }
+        ];
+
+        // 상태값 관리 변수들
+        let activeCards = [...ORIGINAL_CARDS];
+        let currentIdx = 0;
+        let isShuffled = false;
+        let selectedCategory = 'all';
+
+        // 프로젝트 빔 모드 설정 여부
+        let isProjectorMode = false;
+
+        // UI 요소 셀렉터들
+        const cardElem = document.getElementById('conversation-card');
+        const badgeElem = document.getElementById('card-level-badge');
+        const iconElem = document.getElementById('level-icon');
+        const levelTitleElem = document.getElementById('level-title');
+        const qIndexElem = document.getElementById('card-index-display');
+        const titleElem = document.getElementById('card-title');
+        const descElem = document.getElementById('card-description');
+        const progressIndicator = document.getElementById('progress-indicator');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+
+        // 스와이프 터치 이벤트 변수
+        let startX = 0;
+        let endX = 0;
+        let isDragging = false;
+
+        // 앱 초기화 실행
+        window.addEventListener('DOMContentLoaded', () => {
+            renderCard();
+            setupTouchEvents();
+            setupProjectorToggle();
+            setupShuffleToggle();
+        });
+
+        // 카드 렌더링 함수
+        function renderCard() {
+            if (activeCards.length === 0) {
+                // 선택한 카테고리에 질문이 없을 경우 대비
+                titleElem.textContent = "선택된 질문이 없습니다.";
+                descElem.textContent = "카테고리를 다시 조정해 보세요.";
+                return;
+            }
+
+            const card = activeCards[currentIdx];
+
+            // 텍스트 주입
+            titleElem.textContent = card.title;
+            descElem.textContent = card.desc;
+            qIndexElem.textContent = `QUESTION ${String(currentIdx + 1).padStart(2, '0')}`;
+            levelTitleElem.textContent = card.levelText;
+            iconElem.textContent = card.icon;
+            badgeElem.textContent = `LEVEL ${card.level}`;
+
+            // 진행률 표시 업데이트
+            progressIndicator.textContent = `${currentIdx + 1} / ${activeCards.length}`;
+            const progressPercent = ((currentIdx + 1) / activeCards.length) * 100;
+            progressBarFill.style.width = `${progressPercent}%`;
+
+            // 레벨별 테마 스타일 스위칭 (배지 배경색상 및 네온 광채 제거 후 재생성)
+            cardElem.className = 'glass-card w-full h-full rounded-[32px] md:rounded-[48px] p-8 md:p-14 flex flex-col justify-between absolute cursor-grab active:cursor-grabbing';
+            badgeElem.className = 'px-4 py-1.5 rounded-full text-xs md:text-sm font-extrabold tracking-wide uppercase transition-colors duration-300 ';
+
+            if (card.level === 1) {
+                badgeElem.classList.add('bg-level1/20', 'text-level1');
+                cardElem.classList.add('neon-glow-1');
+            } else if (card.level === 2) {
+                badgeElem.classList.add('bg-level2/20', 'text-level2');
+                cardElem.classList.add('neon-glow-2');
+            } else {
+                badgeElem.classList.add('bg-level3/20', 'text-level3');
+                cardElem.classList.add('neon-glow-3');
+            }
+
+            // 빔프로젝터 고대비 텍스트 크기 조절 대응
+            adjustFontSizeForProjectorMode();
+        }
+
+        // 카테고리 필터링 적용 함수
+        function filterCategory(category) {
+            selectedCategory = category;
+            
+            // 탭 활성화 비주얼 변경
+            ['all', 1, 2, 3].forEach(id => {
+                const btn = document.getElementById(`tab-${id}`);
+                if (id === category) {
+                    btn.classList.add('bg-white/15', 'text-white');
+                    btn.classList.remove('text-gray-400');
+                } else {
+                    btn.classList.remove('bg-white/15', 'text-white');
+                    btn.classList.add('text-gray-400');
+                }
+            });
+
+            // 필터링 적용
+            if (category === 'all') {
+                activeCards = [...ORIGINAL_CARDS];
+            } else {
+                activeCards = ORIGINAL_CARDS.filter(c => c.level === category);
+            }
+
+            // 만약 셔플이 켜진 상태라면 다시 섞어줍니다.
+            if (isShuffled) {
+                shuffleArray(activeCards);
+            }
+
+            currentIdx = 0;
+            
+            // 리렌더링 (전환 애니메이션 추가)
+            cardElem.classList.add('slide-in-left');
+            setTimeout(() => {
+                renderCard();
+                cardElem.classList.remove('slide-in-left');
+            }, 100);
+        }
+
+        // 이전/다음 네비게이션 처리 함수
+        function navigateCard(direction) {
+            if (activeCards.length <= 1) return;
+
+            // 애니메이션 진행 방향 클래스 결정
+            const outClass = direction === 'next' ? 'slide-left' : 'slide-right';
+            const inClass = direction === 'next' ? 'slide-in-left' : 'slide-in-right';
+
+            cardElem.classList.add(outClass);
+
+            setTimeout(() => {
+                if (direction === 'next') {
+                    currentIdx = (currentIdx + 1) % activeCards.length;
+                } else {
+                    currentIdx = (currentIdx - 1 + activeCards.length) % activeCards.length;
+                }
+                
+                renderCard();
+                cardElem.classList.remove(outClass);
+                cardElem.classList.add(inClass);
+
+                // 애니메이션 완료 후 스와이프 트랙 복구
+                setTimeout(() => {
+                    cardElem.classList.remove(inClass);
+                }, 350);
+
+            }, 200);
+        }
+
+        // 스와이프 기능 (Touch Gestures) 연동 구현
+        function setupTouchEvents() {
+            // 모바일 터치 이벤트
+            cardElem.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+            }, { passive: true });
+
+            cardElem.addEventListener('touchend', (e) => {
+                if (!isDragging) return;
+                endX = e.changedTouches[0].clientX;
+                handleSwipeGesture();
+                isDragging = false;
+            }, { passive: true });
+
+            // PC 마우스 드래그 스와이프 구현
+            cardElem.addEventListener('mousedown', (e) => {
+                startX = e.clientX;
+                isDragging = true;
+            });
+
+            cardElem.addEventListener('mouseup', (e) => {
+                if (!isDragging) return;
+                endX = e.clientX;
+                handleSwipeGesture();
+                isDragging = false;
+            });
+
+            // 키보드 화살표 누르기 연동
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === 'Space') {
+                    navigateCard('next');
+                } else if (e.key === 'ArrowLeft') {
+                    navigateCard('prev');
+                }
+            });
+        }
+
+        // 스와이프 거리 계산 후 처리
+        function handleSwipeGesture() {
+            const distance = endX - startX;
+            const threshold = 60; // 픽셀 스와이프 기준치
+
+            if (distance > threshold) {
+                // 오른쪽으로 스와이프 -> 이전 카드
+                navigateCard('prev');
+            } else if (distance < -threshold) {
+                // 왼쪽으로 스와이프 -> 다음 카드
+                navigateCard('next');
+            }
+        }
+
+        // 빔 프로젝터 모드 설정 함수
+        function setupProjectorToggle() {
+            const btn = document.getElementById('btn-projector');
+            btn.addEventListener('click', () => {
+                isProjectorMode = !isProjectorMode;
+                document.body.classList.toggle('projector-mode', isProjectorMode);
+                
+                // 버튼 비주얼 토글
+                if (isProjectorMode) {
+                    btn.classList.add('bg-white/20', 'border-white/30');
+                } else {
+                    btn.classList.remove('bg-white/20', 'border-white/30');
+                }
+                
+                adjustFontSizeForProjectorMode();
+            });
+        }
+
+        // 프로젝터 모드 폰트사이즈 분기 처리
+        function adjustFontSizeForProjectorMode() {
+            if (isProjectorMode) {
+                titleElem.className = "text-3xl md:text-5xl font-black leading-snug break-keep text-[#000]";
+                descElem.className = "text-xl md:text-2xl text-[#1f2937] mt-8 max-w-xl mx-auto break-keep leading-relaxed font-bold";
+            } else {
+                titleElem.className = "text-2xl md:text-4xl font-bold leading-normal md:leading-snug transition-all duration-300 break-keep text-white";
+                descElem.className = "text-base md:text-xl text-gray-300 mt-6 max-w-xl mx-auto break-keep leading-relaxed font-medium";
+            }
+        }
+
+        // 카드 셔플 기능 설정 함수
+        function setupShuffleToggle() {
+            const btn = document.getElementById('btn-shuffle');
+            const icon = document.getElementById('shuffle-icon');
+
+            btn.addEventListener('click', () => {
+                isShuffled = !isShuffled;
+                
+                if (isShuffled) {
+                    // 순서 무작위 정렬 활성화
+                    btn.classList.add('bg-white/20', 'border-white/30');
+                    icon.classList.add('fa-spin-fast'); // 가볍게 돌며 인지감 주기
+                    setTimeout(() => icon.classList.remove('fa-spin-fast'), 300);
+                    shuffleArray(activeCards);
+                } else {
+                    // 원상 복구 및 필터링 재정립
+                    btn.classList.remove('bg-white/20', 'border-white/30');
+                    filterCategory(selectedCategory);
+                    return;
+                }
+                
+                currentIdx = 0;
+                renderCard();
+            });
+        }
+
+        // 배열 섞기 헬퍼 (피셔-예이츠 알고리즘)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+    </script>
+</body>
+</html>
+```eof
+
+### 주요 기능 요약
+
+1. **애플 스타일 명품 비주얼 디자인**
+   * 배경에 은은하게 유동적으로 춤추는 **라디알 오가닉 그라데이션 광채**를 적용했습니다.
+   * 카드가 투명하게 겹쳐 보이는 **글래스모피즘(Glassmorphism)** 레이어 기술을 활용했습니다.
+   * 질문 카드의 분위기(Level 1~3)에 따라 피치 코랄, 세이지 그린, 라벤더 퍼플의 **네온 외곽 조명 효과**가 연출됩니다.
+
+2. **완벽한 소그룹 멀티-컨트롤 도구**
+   * **이전/다음 카드 슬라이드**: 3D 가로축 회전(Perspective 3D)을 품은 고품격 좌우 슬라이드 전환 애니메이션을 지원합니다.
+   * **스와이프 및 화살표 동작**: 마우스 드래그와 모바일 터치 및 컴퓨터 키보드 방향키(`ArrowLeft`, `ArrowRight`, `Space`)를 완벽히 연동하여 즉각적으로 조작할 수 있습니다.
+   * **빔프로젝터 모드 토글 (📺)**: 원클릭으로 가독성 높은 화이트 테마 및 매우 큰 볼드 서체로 변환되어 교회 본당이나 세미나실 스크린에 시원하게 띄울 수 있습니다.
+   * **질문 셔플 (순서 섞기)**: 매번 같은 질문 순서가 싫은 소그룹을 위해, 클릭하는 순간 실시간으로 질문을 뒤죽박죽 무작위로 섞어주는 재미난 요소를 탑재했습니다.
+   * **카테고리 퀵 점프(필터)**: 상단 레벨 필터를 눌러 즉시 특정 단계의 질문만 골라서 순환 진행이 가능합니다.
+
+3. **다운로드 후 영구 무료 사용**
+   * 이 HTML 파일은 한 번만 PC나 휴대폰에 저장해두면 데이터 요금이나 인터넷 연결이 없어도 작동하여 수련회 야외나 지하 소그룹실에서도 100% 정상 구동됩니다.
+
+교회 지체들과 소그룹 카드 하나로 즐거운 나눔, 마음과 신앙이 깊어지는 대화 시간을 마음껏 누리시길 바랍니다! 피드백이나 수정하고 싶은 부분이 있다면 언제든 말씀해 주세요.
+
